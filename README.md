@@ -108,6 +108,24 @@ SLG supports left and mutual recursion, plus ground `tnot`. Conditional answers 
 
 Use `prolog` / `lisp` / `lispp` for lexical Lisp callbacks and `(let name expression)` for a Lisp binding shared by subsequent callbacks and `make-query` / `next-solution` / `close-query` for streaming answers. Builtins cover unification, arithmetic, dynamic definitions, exceptions, answer collection and character/byte I/O.
 
+## Experimental ISO Prolog bootstrap
+
+`sprolog/iso` provides a separate, tagged ISO term model and a small
+Prolog-on-Prolog interpreter written with the native S-expression `<-` API:
+
+```lisp
+(asdf:load-system "sprolog/iso")
+(defparameter *iso* (sprolog/iso:make-runtime))
+(sprolog/iso:consult "tests/iso/bootstrap.pl" :runtime *iso*)
+(sprolog/iso:query "ancestor(alice, Who)." :runtime *iso*)
+```
+
+This initial bootstrap handles facts, Horn rules, recursion, conjunction,
+disjunction, truth, failure and unification while distinguishing
+`f(a,b)`, `[f,a,b]` and `[]`. Unsupported ISO control features such as
+cut are explicitly rejected. Details:
+[ISO bootstrap design and limitations](docs/ISO-BOOTSTRAP.md).
+
 ## Prolog interface compatibility measurements
 
 Run `sbcl --script tests/iso/run.lisp --output compat-results/` to measure

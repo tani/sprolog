@@ -6,6 +6,11 @@
   :depends-on ("uiop" "sprolog/src/prolog-loader")
   :in-order-to ((asdf:test-op (asdf:test-op "sprolog/tests"))))
 
+;; Experimental ISO interpreter, layered on the original S-expression VM.
+(asdf:defsystem "sprolog/iso"
+  :depends-on ("sprolog" "sprolog/src/iso"))
+(asdf:register-system-packages "sprolog/src/iso" '("SPROLOG/ISO"))
+
 ;; The inferred module packages declare dependencies while implementation
 ;; definitions share SPROLOG. Map its public nickname to the defining module.
 ;; ASDF extension for (:prolog "name") components in consumer systems.

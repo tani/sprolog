@@ -1,0 +1,20 @@
+name: ISO interpreter bootstrap
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iso-bootstrap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SBCL
+        run: sudo apt-get update && sudo apt-get install -y sbcl
+      - name: Run ISO tagged-term and meta-interpreter assertions
+        run: sbcl --noinform --disable-debugger --script tests/iso/bootstrap-tests.lisp
