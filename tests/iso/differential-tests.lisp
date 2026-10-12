@@ -1,0 +1,71 @@
+;;; Differential observations: native S-expression Prolog vs tagged ISO layer.
+;;; Shared behavior must agree; documented representation differences must not.
+(require :asdf)
+(asdf:load-asd (merge-pathnames "../../sprolog.asd" *load-truename*))
+(asdf:load-system "sprolog/iso")
+(defpackage #:sprolog/iso/differential (:use #:cl))
+(defpackage #:sprolog/iso/native-test (:use #:cl))
+(in-package #:sprolog/iso/differential)
+
+(defvar *checks* 0)
+(defun check (test description)
+  (incf *checks*)
+  (unless test (error "FAILED: ~A" description)))
+(defun native-solutions (database goal)
+  (sprolog:query (list (sprolog:parse-prolog-goal goal
+                       :package :sprolog/iso/native-test))
+                 :database database))
+(defun counts (native iso text)
+  (list (length (native-solutions native text))
+        (length (sprolog/iso:query text :runtime iso))))
+(defun check-pair (native iso text target)
+  (check (equal (counts native iso text) target)
+         (format nil "Differential ~S: expected ~S, observed ~S"
+                 text target (counts native iso text))))
+
+(defun main ()
+  (let ((native (sprolog:make-database))
+        (iso (sprolog/iso:make-runtime))
+        (program (merge-pathnames "bootstrap.pl" *load-truename*))
+        (controls (merge-pathnames "controls.pl" *load-truename*)))
+    (sprolog:load-prolog program :database native
+                         :package :sprolog/iso/native-test)
+    (sprolog/iso:consult program :runtime iso)
+    ;; Common Horn fragment: same answer cardinalities across both models.
+    (dolist (case '(("parent(alice,bob)." (1 1))
+                    ("parent(alice,charlie)." (0 0))
+                    ("parent(X,Y)." (2 2))
+                    ("ancestor(alice,Y)." (2 2))
+                    ("ancestor(bob,Y)." (1 1))
+                    ("choice(X)." (2 2))
+                    ("alternative(X)." (2 2))))
+      (check-pair native iso (first case) (second case)))
+    ;; These deliberately diverge: the old S-expression representation
+    ;; collapses compound/list constructors and []/nil.
+    (dolist (case '(("f(a,b) = [f,a,b]." (1 0))
+                    ("[] = nil." (1 0))
+                    ("value(f(a,b))." (2 1))
+                    ("value([f,a,b])." (2 1))
+                    ("empty_list(nil)." (1 0))
+                    ("mixed(mixed)." (1 0))))
+      (check-pair native iso (first case) (second case)))
+    (sprolog:load-prolog controls :database native
+                         :package :sprolog/iso/native-test)
+    (sprolog/iso:consult controls :runtime iso)
+    ;; Cut, once, call, negation, if-then and exceptions use the
+    ;; existing native control primitives but an ISO object-language solver.
+    (dolist (case '(("stop(X)." (1 1))
+                    ("stop(fallback)." (1 1))
+                    ("cut_then_fail(X)." (0 0))
+                    ("before_cut(X)." (2 2))
+                    ("after_cut(X)." (2 2))
+                    ("without_cut(X)." (4 4))
+                    ("disjunction_cut(X)." (1 1))
+                    ("once_pick(X)." (1 1))
+                    ("call_pick(X)." (3 3))
+                    ("not_pick(z)." (1 1))
+                    ("not_pick(a)." (0 0))
+                    ("choose(X)." (2 2))))
+      (check-pair native iso (first case) (second case)))
+    (format t "~D ISO/native differential checks passed.~%" *checks*)))
+(main)

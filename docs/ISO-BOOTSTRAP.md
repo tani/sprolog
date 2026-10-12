@@ -69,39 +69,100 @@ clauses equivalent to:
   (iso-solve ?body))
 ```
 
-The actual evaluator also implements `fail/0`, `=/2`, and `;/2`.
-Each parsed ISO clause is stored as a **fact about the object language**:
-`(iso-clause <tagged-head> <tagged-body>)`. These are not directly installed
-as executable ISO predicates in the native WAM; only the **meta-interpreter**
-is directly executable. This makes it possible to introduce and test
-separate ISO rules for control and builtins later.
+The interpreter uses the existing WAM's native control primitives for
+the following additional object-language operators:
+
+| ISO goal | Interpretation |
+|---|---|
+| `call(G)` | Verify callable target and recurse into `iso-solve(G)` |
+| `once(G)` | Use native opaque `once/1` around `iso-solve(G)` |
+| `\\+ G` | Use native scoped negation around `iso-solve(G)` |
+| `(If -> Then ; Else)` | Use native if-then-else with commitment on first `If` solution |
+| `If -> Then` | Use native committed if-then |
+| `catch(G, Ball, Recovery)` | Use the existing WAM exception handler and unwind trail |
+| `throw(Ball)` | Propagate tagged ISO terms through the existing exception mechanism |
+| `var/1`, `nonvar/1`, `atom/1`, `compound/1`, etc. | Inspect tagged ISO terms, not Lisp cons objects |
+| `==/2`, `\\=/2`, `unify_with_occurs_check/2` | Use the native WAM unifier and term predicates on tagged ISO terms |
+| `is/2` | Translate tagged arithmetic expressions into the native numeric evaluator |
+
+### Predicate-local cut without leaking through the meta-interpreter
+
+A cut is not an ordinary Prolog goal that can be added naively to
+`iso-solve/1`. A cut inside a meta-interpreter would otherwise prune the
+wrong WAM choice-point scope.
+
+For the supported placement — a top-level conjunction in a source clause —
+the loader **eliminates cuts at consult time**, preserving the original
+source order and each clause's variables. Source clauses with the same
+functor/arity are grouped into one `iso-clause/2` object-language fact
+whose body is an explicit disjunction of clause alternatives.
+
+For example,
+
+```prolog
+p(X) :- q(X), !, r(X).
+p(fallback).
+```
+
+becomes, schematically,
+
+```prolog
+p(Call) :-
+   (Call = p(X), q(X) -> r(X) ;
+    Call = p(fallback)).
+```
+
+The fallback is visited only if the prefix (including head unification and
+`q(X)`) fails. If the prefix succeeds, only its first solution is retained
+and **failure in `r(X)` cannot fall through to the next clause**. Earlier
+clause alternatives and caller choices retain their scope. Subsequent cuts
+in a conjunction become further nested committed conditionals.
+
+This is cut *elimination for a restricted fragment*, not general ISO cut
+handling. Cuts appearing inside nested disjunctions, conditionals, negations,
+meta-calls, or standalone top-level queries are explicitly rejected with
+`unsupported-iso-goal`. No unsupported cut is executed with a guessed
+meaning.
+
+Every clause remains represented as data in `iso-clause/2`; the WAM
+directly compiles the S-expression `iso-solve` interpreter, not the ISO
+user-defined predicates. Consult currently recompiles its meta-clause
+lookup relation for the current runtime.
 
 ## Limitations: strict boundary
 
-Stage 2 currently supports finite Horn programs, recursion, conjunction,
-disjunction, truth, failure, and equality. It does **not** implement ISO cut,
-if-then, negation-as-failure, meta-call, exceptions, arithmetic builtins,
-DCGs, directives, dynamic predicates, operator declarations, or a standalone
-ISO module system. The ISO parser is still the restricted existing Prolog
-scanner; floating-point and double-quoted syntax are not silently accepted.
+The interpreter supports finite Horn programs, recursion, conjunction,
+disjunction, truth, failure, equality, restricted predicate-local cuts,
+`call/1`, `once/1`, `\\+/1`, if-then-else, `catch/3` and `throw/1`.
+It does **not** implement general arbitrary-position ISO cut,
+`call/N` for `N>1`, arithmetic comparisons and some ISO arithmetic
+functions, DCGs, directives, dynamic predicates, operator declarations,
+proper streams, or a standalone
+ISO module system. The ISO lexer/parser is still deliberately restricted:
+floating-point and double-quoted syntax are not accepted.
 
-Recognized unsupported *control constructs* (for example `!`, `->`,
-`\\+`, `call/1`, `once/1`, `catch/3`, `throw/1`, `is/2`) are rejected
-with `unsupported-iso-goal`, including when they appear in a consulted
-clause body. This is intentional: interpreting cut as an ordinary goal would
-violate its predicate-local pruning semantics. Other unimplemented predicates
-currently behave as absent facts (failure) rather than raising ISO's
-`existence_error`, which is a **known semantic deviation**.
+Other unimplemented predicates currently behave as absent facts
+(failure) rather than signalling ISO `existence_error`, which is a
+**known semantic deviation**. The reader protects the implemented static/control predicate indicators,
+but does not yet enforce the full ISO static/dynamic predicate rules.
 
-The meta-interpreter does not aim at production performance: `iso-clause/2`
-is currently a native compiled predicate that is rebuilt when clauses are
-consulted; clause indexing and specialization are future optimizations.
+This subsystem is a *bootstrap interpretation layer*, not an implementation
+claiming complete ISO/IEC 13211-1 compliance. Its tests are separate from
+those of the native `.pl` loader.
 
 ## Test and future milestones
 
 ```sh
 sbcl --noinform --disable-debugger --script tests/iso/bootstrap-tests.lisp
+sbcl --noinform --disable-debugger --script tests/iso/control-tests.lisp
+sbcl --noinform --disable-debugger --script tests/iso/differential-tests.lisp
 ```
+
+The differential suite executes identical Prolog input against both the
+legacy `sprolog:load-prolog` path and the tagged ISO interpreter, checking
+shared results and recording intentional representation differences:
+`f(a,b)` vs `[f,a,b]`, `[]` vs `nil`, and case-sensitive atoms.
+These are behavioral smoke tests, not proof of semantic equivalence.
 
 GitHub Actions runs these assertions independently of the pre-existing
 `tests/iso/run.lisp` compatibility suite, which exercises the **native** .pl
@@ -110,8 +171,8 @@ loader and must not be interpreted as an ISO bootstrap compliance rate.
 Next:
 1. Source-positioned ISO lexer/parser, finite terms, floating point numbers,
    operator declarations and syntax-error classification.
-2. Explicit clause-entry choice-point / cut barriers, meta-call,
-   if-then-else, negation, exception propagation and ISO error terms.
+2. General arbitrary-position cut and meta-call scope semantics, plus
+   complete ISO type/domain/permission errors and exception behavior.
 3. ISO database semantics including assert/retract, proper stream/atom/type
    handling, and separate indexed clauses.
 4. A differential execution test driver for interpreted ISO programs versus

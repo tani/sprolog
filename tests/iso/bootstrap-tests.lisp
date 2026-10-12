@@ -9,7 +9,7 @@
 (defvar *assertions* 0)
 (defun verify (truth &optional (description "ISO bootstrap regression"))
   (incf *assertions*)
-  (unless truth (error "FAILED: ~A" description)))
+  (unless truth (error "FAILED: assertion ~D (~A)" *assertions* description)))
 (defun errors-p (thunk &optional type)
   (handler-case (progn (funcall thunk) nil)
     (error (condition)
@@ -86,10 +86,10 @@
     (verify (null (sprolog/iso:query "empty_list(nil)." :runtime runtime)))
     (verify (errors-p (lambda () (sprolog/iso:query "!" :runtime runtime))
                       'sprolog/iso:unsupported-iso-goal))
-    (verify (errors-p (lambda () (sprolog/iso:query "a -> b" :runtime runtime))
-                      'sprolog/iso:unsupported-iso-goal))
-    (verify (errors-p (lambda () (sprolog/iso:query "\\+ a" :runtime runtime))
-                      'sprolog/iso:unsupported-iso-goal))
+    (verify (null (sprolog/iso:query "a -> b" :runtime runtime))
+            "Failed if-condition yields no answer")
+    (verify (sprolog/iso:query "\\+ a" :runtime runtime)
+            "Negation succeeds for absent predicate")
     ;; Reject unsupported program clauses before publishing earlier facts.
     (let ((tmp (make-pathname :name "bootstrap-bad" :type "pl"
                               :defaults (uiop:temporary-directory))))
@@ -97,7 +97,7 @@
            (progn
              (with-open-file (out tmp :direction :output :if-exists :supersede)
                (write-line "new_fact(a)." out)
-               (write-line "bad(X) :- !." out))
+               (write-line "bad(X) :- call(!)." out))
              (verify (errors-p (lambda () (sprolog/iso:consult tmp :runtime runtime))
                                'sprolog/iso:unsupported-iso-goal))
              (verify (null (sprolog/iso:query "new_fact(a)." :runtime runtime))
