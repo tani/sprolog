@@ -13,3 +13,5 @@
 Commands in these documents are run from the repository root. Benchmark scripts and raw results are in [`benchmarks/`](../benchmarks/); runnable examples are in [`examples/`](../examples/).
 
 - [Development](DEVELOPMENT.md): package-inferred ASDF systems, Nix outputs and portability
+
+- [Prolog .pl loader and ASDF integration](PROLOG-LOADER.md): syntax, packages, component operations, limitations

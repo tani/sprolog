@@ -50,3 +50,14 @@ jobs:
       - uses: cachix/install-nix-action@v30
       - name: Build library and run complete test suite
         run: nix build -L .#checks.$(nix eval --impure --raw --expr builtins.currentSystem).${{ matrix.check }}
+
+  asdf-prolog-smoke:
+    name: ASDF .pl loader integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SBCL
+        run: sudo apt-get update && sudo apt-get install -y sbcl
+      - name: Test ASDF :prolog and compile/load operations
+        run: sbcl --noinform --disable-debugger --script tests/asdf-smoke.lisp

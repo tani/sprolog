@@ -15,6 +15,25 @@ No external Lisp libraries are required. From the repository directory:
 (use-package :sprolog)
 ```
 
+## ASDF .pl loader
+
+To load conventional Prolog source files (facts, rules, lists and basic DCGs),
+load the optional ASDF extension `sprolog/asdf` in the consuming system:
+
+```lisp
+(asdf:defsystem "my-prolog-program"
+  :defsystem-depends-on ("sprolog/asdf")
+  :depends-on ("sprolog")
+  :serial t
+  :components ((:prolog "example" :package "CL-USER")
+               (:file "main")))
+```
+
+The `:prolog "example"` component reads `example.pl`. Use
+`(sprolog:load-prolog "example.pl")` to consult a file directly.
+The source syntax bridge is intentionally limited; it is not a full ISO
+Prolog parser. See [the loader guide](docs/PROLOG-LOADER.md).
+
 ## Nix
 
 The flake follows [nix-common-lisp](https://github.com/tani/nix-common-lisp),

@@ -90,4 +90,5 @@
     (run-term-syntax-tests)
     (run-interactive-tests)
     (run-let-tests)
+    (run-prolog-loader-tests)
     (format t "~D checks passed.~%" *checks*) t))
