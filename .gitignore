@@ -6,3 +6,5 @@ coverage/
 *.fas
 *.o
 *.abcl
+
+compat-results/

@@ -15,3 +15,5 @@ Commands in these documents are run from the repository root. Benchmark scripts 
 - [Development](DEVELOPMENT.md): package-inferred ASDF systems, Nix outputs and portability
 
 - [Prolog .pl loader and ASDF integration](PROLOG-LOADER.md): syntax, packages, component operations, limitations
+
+- [ISO Prolog compatibility measurements](ISO-COMPATIBILITY.md): .pl probes, pass-rate denominator, CI reports and upstream sources

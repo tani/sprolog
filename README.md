@@ -108,6 +108,15 @@ SLG supports left and mutual recursion, plus ground `tnot`. Conditional answers 
 
 Use `prolog` / `lisp` / `lispp` for lexical Lisp callbacks and `(let name expression)` for a Lisp binding shared by subsequent callbacks and `make-query` / `next-solution` / `close-query` for streaming answers. Builtins cover unification, arithmetic, dynamic definitions, exceptions, answer collection and character/byte I/O.
 
+## Prolog interface compatibility measurements
+
+Run `sbcl --script tests/iso/run.lisp --output compat-results/` to measure
+selected ISO-oriented Prolog behavior through the conventional `.pl` loader.
+The runner writes JSON and Markdown results with PASS / FAIL / ERROR /
+UNSUPPORTED, and a separate CI workflow publishes the report. This is a
+bounded local probe suite, not full ISO certification. See
+[compatibility methodology](docs/ISO-COMPATIBILITY.md).
+
 ## Examples and tests
 
 ```sh

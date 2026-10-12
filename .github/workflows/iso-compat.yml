@@ -1,0 +1,53 @@
+name: Prolog syntax compatibility
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iso-probes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SBCL
+        run: sudo apt-get update && sudo apt-get install -y sbcl
+      - name: Unit-test compatibility report comparator
+        run: python3 -m unittest discover -s tests/iso -p 'test_*.py'
+      - name: Run native .pl interface probes
+        run: sbcl --noinform --disable-debugger --script tests/iso/run.lisp --strict --output compat-results/
+      - name: Validate machine-readable results
+        if: always()
+        shell: bash
+        run: |
+          if [ -f compat-results/results.json ]; then
+            python3 - <<'PY'
+          import json
+          p = json.load(open("compat-results/results.json", encoding="utf-8"))
+          s = p["summary"]
+          assert s["total"] == len(p["results"])
+          assert s["attempted"] + s["unsupported"] == s["total"]
+          assert sum(s[key] for key in ["pass", "fail", "error", "unsupported"]) == s["total"]
+          assert s["total"] >= 50
+          assert len({case["id"] for case in p["results"]}) == s["total"]
+          PY
+          else
+            echo "No machine-readable report produced"
+            exit 1
+          fi
+      - name: Publish job summary
+        if: always()
+        run: |
+          if [ -f compat-results/summary.md ]; then
+            cat compat-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload compatibility reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prolog-compatibility-results
+          path: compat-results/
+          if-no-files-found: warn
