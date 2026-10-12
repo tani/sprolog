@@ -22,7 +22,8 @@ swipl -q -s tests/iso/reference-swi.pl -- \
   tests/iso/reference-cases.tsv \
   compat-results/oracle/swi.jsonl \
   tests/iso/bootstrap.pl \
-  tests/iso/controls.pl
+  tests/iso/controls.pl \
+  tests/iso/call-n.pl
 
 sbcl --noinform --disable-debugger --script \
   tests/iso/reference-lisp.lisp \
@@ -119,6 +120,11 @@ When extending this corpus, prioritize:
    floats, comments, and ISO parser errors.
 4. Exception categories, error balls, and contexts.
 5. Logical update view, I/O behavior, and declaration semantics.
+
+The suite includes finite `call/2..8` closure and unbound-variable
+regressions, and tracks exhaustion beyond answer limits separately.
+The interpreter's unsupported dynamic meta-call cuts are documented in
+[ISO-CALL-N.md](ISO-CALL-N.md).
 
 Add expected divergences explicitly and with an explanation in the manifest.
 Never change a Prolog goal to make it match the candidate runtime or convert

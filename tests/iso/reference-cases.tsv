@@ -49,3 +49,20 @@ unknown.predicate	this_predicate_was_never_defined(a).	8	agree
 unknown.in-call	call(this_predicate_was_never_defined(a)).	8	agree
 unknown.in-once	once(this_predicate_was_never_defined(a)).	8	agree
 unknown.in-negation	\+ this_predicate_was_never_defined(a).	8	agree
+meta.call2	call(unary,X).	8	agree
+meta.call2.compound	call(binary(a),X).	8	agree
+meta.call3	call(binary,a,b).	8	agree
+meta.call3.compound	call(ternary(a),b,c).	8	agree
+meta.call4	call(ternary,a,b,c).	8	agree
+meta.call8	call(octary(a),b,c,d,e,f,g,h).	8	agree
+meta.call.source	app_binary(a,Y).	8	agree
+meta.call.nested	meta_twice(X).	8	agree
+meta.call.builtin	meta_equals(X).	8	agree
+meta.call.alias	meta_alias(X,Y), X = a.	8	agree
+meta.call.runtime-variable	P = unary, call(P,X).	8	agree
+meta.call.runtime-partial	P = binary(a), call(P,Y).	8	agree
+meta.call.type	call(42,a).	8	agree
+meta.call.instantiation	call(C,a).	8	agree
+meta.call.unknown	call(unknown_predicate,a).	8	agree
+meta.direct	meta_direct(unary(a)).	8	agree
+meta.direct.instantiation	meta_direct(P).	8	agree

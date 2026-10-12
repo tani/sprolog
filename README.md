@@ -126,6 +126,14 @@ disjunction, truth, failure and unification while distinguishing
 cut are explicitly rejected. Details:
 [ISO bootstrap design and limitations](docs/ISO-BOOTSTRAP.md).
 
+## Extended ISO meta-calls
+
+The separate `sprolog/iso` interpreter now supports `call/2` through
+`call/8` using purely relational closure construction. This preserves
+logic-variable sharing and backtracking even when extending partially
+applied compound goals. The tests include independent SWI-Prolog
+comparisons; see [call/N semantics and remaining cut boundaries](docs/ISO-CALL-N.md).
+
 ## ISO reference differential validation
 
 `tests/iso/reference-cases.tsv` is executed by both SWI-Prolog and

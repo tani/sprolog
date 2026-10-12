@@ -69,6 +69,16 @@ clauses equivalent to:
   (iso-solve ?body))
 ```
 
+The top-level `iso-solve/1` relation first validates that the target
+goal is callable and only then delegates to `iso-dispatch/1`. This prevents
+an unbound object-language goal from being spuriously bound by the head of
+a built-in control clause; such calls instead raise `instantiation_error`.
+
+The interpreter also supports `call/2..8` by a separate relational closure
+expansion, preserving variable identity without Lisp reification; see
+[the call/N implementation notes](ISO-CALL-N.md). It does **not** generalize
+cut scope through meta-calls.
+
 The interpreter uses the existing WAM's native control primitives for
 the following additional object-language operators:
 
@@ -135,7 +145,7 @@ The interpreter supports finite Horn programs, recursion, conjunction,
 disjunction, truth, failure, equality, restricted predicate-local cuts,
 `call/1`, `once/1`, `\\+/1`, if-then-else, `catch/3` and `throw/1`.
 It does **not** implement general arbitrary-position ISO cut,
-`call/N` for `N>1`, arithmetic comparisons and some ISO arithmetic
+`call/N` for `N>8`, arithmetic comparisons and some ISO arithmetic
 functions, DCGs, directives, dynamic predicates, operator declarations,
 proper streams, or a standalone
 ISO module system. The ISO lexer/parser is still deliberately restricted:

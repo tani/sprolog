@@ -8,7 +8,8 @@
 
 (defparameter *root* (uiop:pathname-directory-pathname *load-truename*))
 (defparameter *sources* (list (merge-pathnames "bootstrap.pl" *root*)
-                              (merge-pathnames "controls.pl" *root*)))
+                              (merge-pathnames "controls.pl" *root*)
+                              (merge-pathnames "call-n.pl" *root*)))
 
 (defun json-string (text output)
   (write-char #\" output)

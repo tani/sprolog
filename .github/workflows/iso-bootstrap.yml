@@ -18,6 +18,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y sbcl
       - name: Run ISO tagged-term and meta-interpreter assertions
         run: sbcl --noinform --disable-debugger --script tests/iso/bootstrap-tests.lisp
+      - name: Check ISO call/N closure execution and variable sharing
+        run: sbcl --noinform --disable-debugger --script tests/iso/call-tests.lisp
       - name: Check ISO control, cut and conditional semantics
         run: sbcl --noinform --disable-debugger --script tests/iso/control-tests.lisp
       - name: Compare tagged ISO evaluator with the original .pl execution path

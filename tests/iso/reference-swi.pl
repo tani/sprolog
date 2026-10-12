@@ -112,9 +112,9 @@ oracle_lines(Input, Output) :-
     ).
 
 main :-
-    current_prolog_flag(argv, [CasesFile, OutputFile, FirstProgram, SecondProgram]),
-    consult(FirstProgram),
-    consult(SecondProgram),
+    current_prolog_flag(argv, [CasesFile, OutputFile|Programs]),
+    Programs \= [],
+    maplist(consult, Programs),
     setup_call_cleanup(
         open(CasesFile, read, Cases, [encoding(utf8)]),
         setup_call_cleanup(
