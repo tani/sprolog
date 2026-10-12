@@ -57,8 +57,10 @@
         (sprolog/iso:consult program :runtime runtime)
       (verify (eq same runtime))
       (verify (= number 13)))
-    (verify (null (sprolog/iso:query "parent(alice,bob)." :runtime fresh))
-            "Runtimes have independent clause databases")
+    (verify (handler-case
+                (progn (sprolog/iso:query "parent(alice,bob)." :runtime fresh) nil)
+              (sprolog:iso-exception () t))
+            "Runtimes have independent clauses and missing names signal existence_error")
     (verify (= 2 (length (sprolog/iso:query "parent(X,Y)." :runtime runtime))))
     (let* ((answers (sprolog/iso:query "ancestor(alice,Who)." :runtime runtime))
            (names (mapcar (lambda (row)
@@ -86,10 +88,10 @@
     (verify (null (sprolog/iso:query "empty_list(nil)." :runtime runtime)))
     (verify (errors-p (lambda () (sprolog/iso:query "!" :runtime runtime))
                       'sprolog/iso:unsupported-iso-goal))
-    (verify (null (sprolog/iso:query "a -> b" :runtime runtime))
+    (verify (null (sprolog/iso:query "fail -> true" :runtime runtime))
             "Failed if-condition yields no answer")
-    (verify (sprolog/iso:query "\\+ a" :runtime runtime)
-            "Negation succeeds for absent predicate")
+    (verify (sprolog/iso:query "\\+ fail" :runtime runtime)
+            "Negation succeeds for a defined failing predicate")
     ;; Reject unsupported program clauses before publishing earlier facts.
     (let ((tmp (make-pathname :name "bootstrap-bad" :type "pl"
                               :defaults (uiop:temporary-directory))))
@@ -100,7 +102,8 @@
                (write-line "bad(X) :- call(!)." out))
              (verify (errors-p (lambda () (sprolog/iso:consult tmp :runtime runtime))
                                'sprolog/iso:unsupported-iso-goal))
-             (verify (null (sprolog/iso:query "new_fact(a)." :runtime runtime))
+             (verify (errors-p (lambda () (sprolog/iso:query "new_fact(a)." :runtime runtime))
+                               'sprolog:iso-exception)
                      "Bad source is not partially loaded"))
         (when (probe-file tmp) (delete-file tmp))))
     ;; Native S-expression Prolog remains unmodified.

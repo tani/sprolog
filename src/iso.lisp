@@ -272,7 +272,26 @@ explicit choice/cut scope in its object-level disjunction."
                               finally (return result))))))
 
 (defstruct (runtime (:constructor %make-runtime (database &optional clauses)))
-  database clauses)
+  database clauses (signatures (make-hash-table :test 'equal)))
+
+(defvar *active-runtime* nil
+  "Dynamically scoped runtime used only while an ISO query executes.")
+
+(defun ensure-defined-iso-goal (goal)
+  "Signal ISO existence_error for an unknown predicate indicator, while
+preserving ordinary failure for an existing predicate with no matching head."
+  (ensure-callable goal)
+  (unless *active-runtime*
+    (error "No ISO interpreter runtime is active"))
+  (unless (or (reserved-iso-head-p goal)
+              (gethash (head-key goal) (runtime-signatures *active-runtime*)))
+    (let ((key (head-key goal)))
+      (sprolog::iso-error "existence_error"
+                          (sprolog::iso-atom "procedure")
+                          (sprolog::iso-compound (sprolog::iso-atom "/")
+                                                 (sprolog::iso-atom (car key))
+                                                 (cdr key)))))
+  t)
 
 (defun iso-arithmetic->native (term)
   "Bridge ISO arithmetic syntax to the existing native numeric evaluator.
@@ -359,6 +378,7 @@ the supported ISO constructs. Cut is eliminated at consult time."
     ;; Remains defined (as failure) until source predicates are consulted.
     (sprolog:<-- (iso-clause ?head ?body) fail)
     (sprolog:<- (iso-solve ?goal)
+      (lispp (ensure-defined-iso-goal ?goal))
       (iso-clause ?goal ?body)
       (iso-solve ?body))))
 
@@ -379,6 +399,8 @@ the supported ISO constructs. Cut is eliminated at consult time."
       (sprolog::add-clause (list 'iso-clause (car entry) (cdr entry))
                           nil nil database))
     (setf (runtime-clauses runtime) all)
+    (dolist (clause new)
+      (setf (gethash (head-key (car clause)) (runtime-signatures runtime)) t))
     (values runtime (length new))))
 
 (defun query (text &key (runtime (make-runtime)) limit)
@@ -386,5 +408,6 @@ the supported ISO constructs. Cut is eliminated at consult time."
 Answers use tagged ISO terms; predicates and variables preserve case."
   (let ((goal (parse-goal text)))
     (validate-goal goal)
-    (sprolog:query (list (list 'iso-solve goal))
-                   :database (runtime-database runtime) :limit limit)))
+    (let ((*active-runtime* runtime))
+      (sprolog:query (list (list 'iso-solve goal))
+                     :database (runtime-database runtime) :limit limit))))

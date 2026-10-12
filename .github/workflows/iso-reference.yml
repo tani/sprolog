@@ -1,0 +1,55 @@
+name: ISO reference differential
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iso-reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install independent reference and host interpreters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sbcl swi-prolog-nox
+      - name: Test reference comparison and manifest validation
+        run: python3 -m unittest discover -s tests/iso -p 'test_*.py'
+      - name: Evaluate shared cases with both implementations
+        run: |
+          set -euo pipefail
+          mkdir -p compat-results/oracle
+          swipl -q -s tests/iso/reference-swi.pl -- \
+            tests/iso/reference-cases.tsv \
+            compat-results/oracle/swi.jsonl \
+            tests/iso/bootstrap.pl \
+            tests/iso/controls.pl
+          sbcl --noinform --disable-debugger --script \
+            tests/iso/reference-lisp.lisp \
+            tests/iso/reference-cases.tsv \
+            compat-results/oracle/sprolog.jsonl
+      - name: Detect unexpected semantic differences
+        run: |
+          python3 tests/iso/reference-compare.py \
+            tests/iso/reference-cases.tsv \
+            compat-results/oracle/swi.jsonl \
+            compat-results/oracle/sprolog.jsonl \
+            --output compat-results/oracle
+      - name: Publish differential summary
+        if: always()
+        run: |
+          if [ -f compat-results/oracle/summary.md ]; then
+            cat compat-results/oracle/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload reference observations and diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso-prolog-reference-oracle
+          path: compat-results/oracle/
+          if-no-files-found: warn

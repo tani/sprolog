@@ -19,3 +19,5 @@ Commands in these documents are run from the repository root. Benchmark scripts 
 - [ISO Prolog compatibility measurements](ISO-COMPATIBILITY.md): .pl probes, pass-rate denominator, CI reports and upstream sources
 
 - [ISO Prolog bootstrap](ISO-BOOTSTRAP.md): tagged terms, S-expression Prolog interpreter, current semantics and milestones
+
+- [Independent ISO reference oracle](ISO-ORACLE.md): SWI differential runs, full answer comparisons, known divergences and CI artifacts

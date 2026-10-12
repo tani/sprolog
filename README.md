@@ -126,6 +126,15 @@ disjunction, truth, failure and unification while distinguishing
 cut are explicitly rejected. Details:
 [ISO bootstrap design and limitations](docs/ISO-BOOTSTRAP.md).
 
+## ISO reference differential validation
+
+`tests/iso/reference-cases.tsv` is executed by both SWI-Prolog and
+`sprolog/iso`. CI compares **ordered answer bindings**, ISO term structure,
+failure and exception classes. Known discrepancies remain visible rather
+than being skipped. Reports are uploaded as GitHub Actions artifacts.
+
+See [reference oracle methodology](docs/ISO-ORACLE.md).
+
 ## Prolog interface compatibility measurements
 
 Run `sbcl --script tests/iso/run.lisp --output compat-results/` to measure

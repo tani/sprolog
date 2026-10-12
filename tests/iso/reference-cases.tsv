@@ -1,0 +1,51 @@
+# id<TAB>Prolog goal<TAB>max solutions<TAB>comparison baseline (agree/diverge)
+# Cases are designed for the supported finite ISO bootstrap subset.
+facts.parent	parent(alice,bob).	8	agree
+facts.parent-fail	parent(alice,charlie).	8	agree
+facts.parent-solutions	parent(X,Y).	8	agree
+recursion.ancestor	ancestor(alice,Who).	8	agree
+recursion.ancestor-subtree	ancestor(bob,Who).	8	agree
+control.choice	choice(X).	8	agree
+limit.truncated	prefix(X).	2	agree
+limit.exhausted	choice(X).	2	agree
+control.alternative	alternative(X).	8	agree
+control.disjunction	X = red ; X = blue.	8	agree
+control.if-then	(true -> X = yes ; X = no).	8	agree
+control.if-else	(fail -> X = yes ; X = no).	8	agree
+control.if-then-failure	(true -> fail ; true).	8	agree
+control.once	once(prefix(X)).	8	agree
+control.call	call(prefix(X)).	8	agree
+control.negation	\+ prefix(z).	8	agree
+control.negation-fail	\+ prefix(a).	8	agree
+control.cut	stop(X).	8	agree
+control.cut-after-fail	cut_then_fail(X).	8	agree
+control.cut-caller	after_cut(X).	8	agree
+control.cut-before	before_cut(X).	8	agree
+control.cut-nested-condition	cut_after_then(X).	8	agree
+unification.same	f(a,b) = f(a,b).	8	agree
+unification.different	f(a,b) = [f,a,b].	8	agree
+unification.empty-list	[] = nil.	8	agree
+unification.list	[a,b] = [a|[b]].	8	agree
+unification.variable	X = a, Y = [b,c].	8	agree
+unification.alias	X = Y.	8	agree
+unification.repeated-alias	X = f(Y,Y), Z = Y.	8	agree
+unification.nonunifiable	a \= b.	8	agree
+# SWI 7+ treats [] as a special non-atom, unlike ISO/IEC 13211-1.
+types.atom	atom([]).	8	diverge
+types.empty-atom	atom('[]').	8	agree
+types.empty-equivalence	[] = '[]'.	8	diverge
+types.atomic-empty	atomic([]).	8	agree
+types.compound	compound(f(a)).	8	agree
+types.ground	ground(f(a,b)).	8	agree
+types.var	var(X), X = a.	8	agree
+arith.is	X is 1 + 2 * 3.	8	agree
+arith.div	X is -7 // 3.	8	agree
+exceptions.throw	catch(throw(ball), ball, true).	8	agree
+exceptions.recover	catch(throw(problem(a)),problem(X),X=a).	8	agree
+exceptions.unhandled	throw(ball).	8	agree
+exceptions.type	call(42).	8	agree
+exceptions.instantiation	call(X).	8	agree
+unknown.predicate	this_predicate_was_never_defined(a).	8	agree
+unknown.in-call	call(this_predicate_was_never_defined(a)).	8	agree
+unknown.in-once	once(this_predicate_was_never_defined(a)).	8	agree
+unknown.in-negation	\+ this_predicate_was_never_defined(a).	8	agree
